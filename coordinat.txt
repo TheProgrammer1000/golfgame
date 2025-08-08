@@ -1,0 +1,30 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Skapa vektorerna
+u = np.array([5, 1])
+v = np.array([2, 3])
+
+# Rita vektorn u (röd)
+plt.quiver(0, 0, u[0], u[1], angles='xy', scale_units='xy', scale=1, color='r', label='u = [5, 1]')
+
+# Rita vektorn v (blå)
+plt.quiver(0, 0, v[0], v[1], angles='xy', scale_units='xy', scale=1, color='b', label='v = [2, 3]')
+# Addition
+print("v + u =", v + u)
+
+# Skalär multiplikation
+print("3 * v =", 3 * v)
+# Sätt gränser för grafen
+plt.xlim(0, 6)
+plt.ylim(0, 4)
+
+# Rita rutnät och axlar
+plt.grid(True)
+plt.axhline(0, color='black')
+plt.axvline(0, color='black')
+
+plt.title("Två vektorer i 2D")
+plt.legend()
+plt.show()
+
