@@ -1,139 +1,118 @@
 import math
 import matplotlib.pyplot as plt
-
-# Example file showing a basic pygame "game loop"
 import pygame
 
-g = 9.81 # graviation 
-
-
-#print("ball_xMeter_on_ground: ", ball_xMeter_on_ground)
-# print(ball_hit_ground_t)
- 
-# pygame setup
-hole_x = 550
-hole_y = 20
- 
-hole_radius = 0.15
-circleRadius = 1
+# Constants
+g = 9.81  # gravity (m/s^2)
+hole_x = 55.0  # hole position in meters (x)
+hole_y = 2.0   # hole position in meters (y)
+hole_radius = 0.15  # hole radius in meters
+circleRadius = 1  # ball radius in meters
 
 screen_width = 1280
 screen_height = 720
-    
+
 def main():
-    
-    shooting_grade = int(input("Skriv in graden som du ska skjuta: ")) # 60
+    shooting_grade = int(input("Skriv in graden som du ska skjuta: "))  # e.g., 60
+    v0_speed = int(input("Skriv in hastigheten du vill skjuta med: "))  # e.g., 22 m/s
+    angle_rad = math.radians(shooting_grade)
 
-    v0_speed = int(input("Skriv in hastighetn du vill skjuta med: ")) # 22 m/s 
-    angle_deg = math.radians(shooting_grade)
+    # Calculate initial velocity components
+    vox = v0_speed * math.cos(angle_rad)
+    voy = v0_speed * math.sin(angle_rad)
 
-    x_pos_angle = round(math.cos(angle_deg), 3)
-    y_pos_angle = round(math.sin(angle_deg), 3)
+    print(f"speed: {v0_speed} m/s")
+    print(f"vox: {vox:.3f} m/s i X-axel")
+    print(f"voy: {voy:.3f} m/s i Y-axel\n")
 
-    print("speed: ", v0_speed, "m/s \n")
+    # Physics parameters
+    restitution = 0.8  # bounce energy retention (80%)
+    friction_x = 0.95  # horizontal friction during bounce
 
-    vox = v0_speed * x_pos_angle
-    voy = v0_speed * y_pos_angle
+    # Initial state
+    current_x = 0.0
+    current_y = 0.0
+    current_vx = vox
+    current_vy = voy
 
-
-    print("vox: ", vox, "m/s i X-axel")
-    print("voy: ", voy ,"m/s i Y-axel\n")
-
- 
-    
+    # Tracking positions for plotting
     x_positions = []
-    y_positions = []        
-    seconds = 0
-    
+    y_positions = []
+
+    # PyGame setup
     WHITE = (255, 255, 255)
     RED = (255, 0, 0)
-    
     YELLOW = (0, 255, 0)
- 
-
     pygame.init()
-    screen = pygame.display.set_mode((screen_width, screen_height))   
+    screen = pygame.display.set_mode((screen_width, screen_height))
+    pygame.display.set_caption("Golf Ball Simulation")
     clock = pygame.time.Clock()
-    
-    
-    
-    
-    new_ball_posX = 0
-    new_ball_posY = 0
 
-    
+    scale = 10  # pixels per meter
     running = True
-
-    scale = 10
+    hit_target = False
 
     while running:
-        
-        dt = clock.tick(60) / 1000  # dt i sekunder (tid mellan frames)
-        seconds += dt  # uppdatera tiden med verklig tid som gått
+        dt = clock.tick(60) / 1000  # delta time in seconds
 
-        
+        # Handle quit event
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-                
-        screen.fill(WHITE)  # Fyll bakgrunden       
 
-        
-        # drawing cirle
-        pygame.draw.circle(screen, YELLOW, (hole_x, mathConvertToGame(hole_y)), circleRadius * scale) # (20, 0) as in math
-        
-       
-        
-        new_ball_posX = new_posX(vox, dt)
-        new_ball_posY = new_posY(voy, dt)
-        
-        x_pixel = int(new_ball_posX * scale)
-        y_pixel = int(mathConvertToGame(new_ball_posY * scale))  # invertera y-led
-        
-        
-        distFromhole = calc_pos_from_hole_px(vox, voy, seconds, scale)
+        # Clear screen
+        screen.fill(WHITE)
 
-        if distFromhole <= (circleRadius * scale):
+        # Draw hole (converted to pixels)
+        hole_x_pixel = hole_x * scale
+        hole_y_pixel = mathConvertToGame(hole_y * scale)
+        pygame.draw.circle(screen, YELLOW, (int(hole_x_pixel), int(hole_y_pixel)), int(circleRadius * scale))
+
+        # Update physics
+        current_vy -= g * dt  # apply gravity
+        current_x += current_vx * dt
+        current_y += current_vy * dt
+
+        # Bounce when hitting the ground
+        if current_y <= 0:
+            current_vy = -current_vy * restitution  # reverse and dampen vertical velocity
+            current_vx *= friction_x  # apply horizontal friction
+            current_y = circleRadius * 2  # reset to ground level
+
+            # Stop if bounce is negligible
+            if abs(current_vy) < 0.2:
+                current_vy = 0
+
+        # Apply rolling friction when on ground and not bouncing
+        if current_y == 0 and current_vy == 0:
+            current_vx *= 0.99  # rolling friction
+            if abs(current_vx) < 0.01:
+                current_vx = 0
+
+        # Track positions for plotting
+        x_positions.append(current_x)
+        y_positions.append(current_y)
+
+        # Draw ball (converted to pixels)
+        ball_x_pixel = int(current_x * scale)
+        ball_y_pixel = int(mathConvertToGame(current_y * scale))
+        pygame.draw.circle(screen, RED, (ball_x_pixel, ball_y_pixel), int(circleRadius * scale))
+
+        # Check if ball hit the target
+        dist = calc_pos_from_hole_px(current_x, current_y, scale)
+        if dist <= circleRadius * scale:
+            hit_target = True
             print("Målet är träffats!")
-            break
-    
-        if new_ball_posY <= (circleRadius * 2):
-            new_ball_posY = circleRadius
+            running = False
 
-        
-        
-   
-        
-        # if new_ball_posY < 0:      # träffat marken            
-        #     print("new_ball_posX: ", new_ball_posX)
-        #     print("Träffat marken")
-        #     break
+        # Stop if ball is effectively stopped
+        if current_y == 0 and abs(current_vy) == 0 and abs(current_vx) < 0.01:
+            print("Bollen har stannat.")
+            running = False
 
-        
-        print("new_ball_posX: ", new_ball_posX)
-        print("new_ball_posY: ", new_ball_posY)
-        
-        
-        pygame.draw.circle(screen, RED, (x_pixel, y_pixel), circleRadius * scale)
+        pygame.display.flip()
 
-
-        x_positions.append(new_ball_posX)
-        y_positions.append(new_ball_posY)
-        
-     
-        
-        pygame.display.update()
-        
-
-    
-    
-
-    
-
-   
-        
-    
-    # 🔽 När loopen är klar – rita hela banan
+    # Plot trajectory after simulation ends
     plt.plot(x_positions, y_positions)
     plt.xlabel("Meter i X-led")
     plt.ylabel("Meter i Y-led")
@@ -141,67 +120,21 @@ def main():
     plt.grid()
     plt.show()
 
-    
-    
-    
-    # med vinkeln 60 så med hastigheten 22 m / s
-    # då efter 2 sekunder kommer pos_X vara 22 och pos_Y vara 18.484
-    
-    # dt = calc_pos_from_hole(seconds)
-    
+    pygame.quit()
 
-    # #print("dt: ", dt)
-    
-    # if(calc_pos_from_hole(dt) <= hole_radius) :
-    #     print("Hole in one!")
-
-
-
-def new_posY(voy ,t) :
-    new_pos_Y = round((voy * t) - 1 / 2 * (g * (t**2)), 3) #y(t) = y₀ + v₀y * t - (1/2)gt²
-    #print('new_pos_Y: ', new_pos_Y)                                      
-                                                                                
-    return new_pos_Y
-  
-def new_posX(vox,t) :
-    new_pos_X = vox * t   #x(t) = x₀ + v₀x * t
-    #print('new_pos_X: ', new_pos_X)
-    return new_pos_X
-
-
-def calc_pos_from_hole(vox, voy, t) :    
-    dx = (new_posX(vox, t) - hole_x) ** 2
-    dy = (new_posY(voy, t) - hole_y) ** 2
-
-    dt = math.sqrt(dx + dy)
-    
-    return dt
-
-
-def calc_pos_from_hole_px(vox, voy, t, scale):
-    # Bollens pixelposition
-    ball_x_px = new_posX(vox, t) * scale
-    ball_y_px = mathConvertToGame(new_posY(voy, t) * scale)
-    
-    # Hålets pixelposition
-    hole_x_px = hole_x
-    hole_y_px = mathConvertToGame(hole_y)
-    
-    # Avstånd i pixlar
+def calc_pos_from_hole_px(ball_x, ball_y, scale):
+    """Calculate distance between ball and hole in pixels."""
+    ball_x_px = ball_x * scale
+    ball_y_px = mathConvertToGame(ball_y * scale)
+    hole_x_px = hole_x * scale
+    hole_y_px = mathConvertToGame(hole_y * scale)
     dx = ball_x_px - hole_x_px
     dy = ball_y_px - hole_y_px
     return math.sqrt(dx**2 + dy**2)
 
-  
-def secounds_ball_toGround(voy) :
-   return voy / (0.5 * g) # stop here
-  
-def new_x_pos_after_curve(vox): 
-    return vox * secounds_ball_toGround()
-
 def mathConvertToGame(y):
-    return (screen_height - y) - circleRadius
+    """Convert mathematical y-coordinate to PyGame's coordinate system."""
+    return screen_height - y
 
 if __name__ == "__main__":
     main()
-  
