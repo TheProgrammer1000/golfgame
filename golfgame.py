@@ -84,8 +84,8 @@ def main():
         
        
         
-        new_ball_posX = new_posX(vox, seconds)
-        new_ball_posY = new_posY(voy, seconds)
+        new_ball_posX = new_posX(vox, dt)
+        new_ball_posY = new_posY(voy, dt)
         
         x_pixel = int(new_ball_posX * scale)
         y_pixel = int(mathConvertToGame(new_ball_posY * scale))  # invertera y-led
