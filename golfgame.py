@@ -49,7 +49,13 @@ def main():
     current_hastighet_Y = inital_hastighet * math.sin(angle_rad) # 7.5m/s
     
     
+    x1, y1 = 200, 600
+    x2, y2 = 800, 500
 
+    
+    line_start = (x1, y1)  # start längre ner
+    line_end = (x2, y2)    # slut längre ner
+    
 
     while running:
         dt = clock.tick(60) / 1000  # delta time in seconds
@@ -64,7 +70,9 @@ def main():
         
         wall_x = 300
         # Väg
-        pygame.draw.line(screen, RED, (wall_x, 400), (wall_x, 600), 3)
+        #pygame.draw.line(screen, RED, (wall_x, 400), (wall_x, 600), 3)
+        
+        pygame.draw.line(screen, RED, line_start, line_end, 3)
 
         
       
@@ -78,6 +86,9 @@ def main():
         if current_ball_y < 0:
             current_ball_y = 0
             current_hastighet_Y = -current_hastighet_Y * bounce_loses_energy
+            
+            
+        
 
         # # Track positions for plotting
         x_positions.append(current_ball_x)
@@ -89,6 +100,8 @@ def main():
         pygame.draw.circle(screen, RED, (ball_x_pixel, ball_y_pixel), int(circleRadius * scale))
 
 
+        
+        
         # Träffat vägen, kollar att bollen_y också är i den höjden från 400 till 600 där väggen är. Och kollar om bollen_x_pos - wall_x <= circleRadius * scale då vet vi att den nuddat!
         if abs(ball_x_pixel - wall_x) <= circleRadius * scale and 400 <= ball_y_pixel <= 600:
             print("Träffat en väg!")
@@ -141,6 +154,63 @@ def main():
     plt.show()
 
     pygame.quit()
+
+
+
+def calcCollisionAtSlope(obstacleX1, obstacleX2, obstacleY1, obstacleY2,
+                         current_hastighet_X, current_hastighet_Y, ball_pos_x, scale, g):
+    
+    # vad är hypotenusan på denna mark
+    adjacentForWallX = obstacleX2 - obstacleX1
+    oppositeForWallY = obstacleY2 - obstacleY1
+    
+    hypotenusanForWall = math.sqrt(((adjacentForWallX)**2 + (oppositeForWallY)**2))
+    
+    cosForWall = adjacentForWallX / hypotenusanForWall
+    sinForWall = oppositeForWallY / hypotenusanForWall
+    
+    angle_wall_rad = math.atan2(sinForWall, cosForWall)
+  
+    
+    time_when_ball_touch_wall = (obstacleX2 - ball_pos_x) / current_hastighet_X
+    
+    if time_when_ball_touch_wall > 0:
+  
+    
+  
+    # reflected_angle=2×normal_angle−incoming_angle  
+          
+    # time_when_ball_touch_wall = (obstacleX2 - ball_pos_x) / current_hastighet_X
+    
+    # print("time_when_ball_touch_wall: ", time_when_ball_touch_wall)
+    
+    # YposWhenHit = current_hastighet_Y * time_when_ball_touch_wall - (0.5 * g) * (time_when_ball_touch_wall**2)
+    
+    # Y_hastighet_when_hit = current_hastighet_Y + (-g * time_when_ball_touch_wall) 
+    
+    
+        
+    newAngle2 = math.atan2(Y_hastighet_when_hit, current_hastighet_X)
+    
+    #newAngle = math.atan(Y_hastighet_when_hit / (current_hastighet_X))
+    #print("newAngle i grader:", math.degrees(newAngle))
+
+    
+    
+    angle_deg = math.degrees(newAngle2)
+    
+    if angle_deg < 0:
+        angle_deg += 360
+
+    ball_new_angle_after_hit_wall = angle_deg
+    
+    new_angle_rad = math.radians(ball_new_angle_after_hit_wall)
+    
+    
+
+    
+    
+    
 
 def calc_pos_from_hole_px(ball_x, ball_y, scale):
     """Calculate distance between ball and hole in pixels."""
