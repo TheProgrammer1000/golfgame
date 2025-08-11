@@ -9,16 +9,16 @@ hole_y = 2.0   # hole position in meters (y)
 hole_radius = 0.15  # hole radius in meters
 circleRadius = 1  # radie i meter
 
-screen_width = 1280
-screen_height = 720
-scale_line = 3
+screen_width = 1920
+screen_height = 1280
+scale_line = 10
 
 def main():
-    shooting_grade = 40
-    inital_hastighet = 16
+    shooting_grade = 60
+    inital_hastighet = int(input("Skriv in farten: "))#30
     angle_rad = math.radians(shooting_grade)
 
-    bounce_loses_energy = 0.7
+    bounce_loses_energy = 0.90
 
     print(f"speed: {inital_hastighet} m/s")
 
@@ -41,15 +41,15 @@ def main():
     current_hastighet_X = inital_hastighet * math.cos(angle_rad)
     current_hastighet_Y = inital_hastighet * math.sin(angle_rad)
 
-    x1 = 100
-    x2 = 800
+    x1 = 20
+    x2 = screen_width
     
     ground_y_px = screen_height - 0 * scale  # 0 meter i PyGame-pixel
 
     # Sätt linjen till ground_y_px (t.ex. 700) i pixlar
     # (flyttad högre upp för att ytan ska vara längre upp på skärmen)
-    y1 = (ground_y_px)
-    y2 = (ground_y_px - 10)  # lite lutning
+    y1 = (ground_y_px - 20)
+    y2 = (ground_y_px - 120)  # lite lutning
     
     line_start = (x1, y1)
     line_end = (x2, y2)
@@ -68,7 +68,7 @@ def main():
         # Vi gör en while-loop för att hantera att dt kan behöva delas upp om kollision sker
         time_left = dt
 
-        while time_left > 1e-8:
+        while time_left > 0.e3:
             # Kolla kollisionstid med linjen för nuvarande bana och hastighet
             result = calcBallCollision(
                 x1, y1, x2, y2,
@@ -77,8 +77,18 @@ def main():
                 scale
             )
             
+            print('result: ', result)
+            
+            print('result[0]: ', result[0])
+            print('result[2]: ', result[2])
+            
             if result and result[0]:  # om det finns träffar (förhindrar ValueError)
                 collisions, hx, hy, k = result
+                
+                     
+                print('hx', hx)
+                print('hy', hy)
+                print('k', k)
 
                 # Hitta närmsta framtida kollisionstid
                 t_hit, cx, cy = min(collisions, key=lambda c: c[0])
@@ -91,6 +101,9 @@ def main():
                     
                     # Uppdatera hastighet vid kollisionspunkt
                     current_hastighet_X, current_hastighet_Y = calcBallOut(current_hastighet_X, current_hastighet_Y, k)
+
+                    current_hastighet_X = current_hastighet_X * bounce_loses_energy
+                    current_hastighet_Y = current_hastighet_Y * bounce_loses_energy
 
                     simulation_time += t_hit
                     time_left -= t_hit
@@ -142,7 +155,7 @@ def main():
 
 def calcBallOut(hx, hy, k):
     print(f"Hastigheter: hx={hx:.2f}, hy={hy:.2f}, lutning k={k:.3f}")
-    
+
     if hx == 0:
         degreeBallin = math.atan2(hy, 0)
     else:
@@ -164,6 +177,8 @@ def calcBallOut(hx, hy, k):
     new_current_hastighet_Y = hypotenusan * math.sin(outDegreeBall_rad)
     
     return new_current_hastighet_X, new_current_hastighet_Y
+
+        
 
 def calcBallCollision(obstacle_x1_px, obstacle_y1_px,
                       obstacle_x2_px, obstacle_y2_px,
@@ -191,17 +206,23 @@ def calcBallCollision(obstacle_x1_px, obstacle_y1_px,
     obstacle_y2 = (screen_height - obstacle_y2_px) / scale + circleRadius
     obstacle_x2 = obstacle_x2_px / scale
 
+    isOnlyHorizontal = False
+
+    k = 0
+
 
     # Kolla om linjen är vertikal
-    if obstacle_x2 == obstacle_x1:
+    if obstacle_y1 == obstacle_y2 and obstacle_x1 != obstacle_x2:
         # Specialhantering för vertikal linje
         # T.ex. sätt k = None eller en flagga
-        k = None
+        isOnlyHorizontal = True
+        k = 0
     else:
         k = (obstacle_y2 - obstacle_y1) / (obstacle_x2 - obstacle_x1)
 
     # 2️⃣ Beräkna linjens ekvation: y = kx + m
     m = obstacle_y1 - k * obstacle_x1                              # skärning med y-axeln
+
 
     # 3️⃣ Bollens bana i meter: 
     # x(t) = x0 + vx * t
@@ -212,44 +233,47 @@ def calcBallCollision(obstacle_x1_px, obstacle_y1_px,
     # 4️⃣ Flytta över allt till ena sidan så vi får en andragradsekvation i t:
     # (-0.5*g)*t² + (vy - k*vx)*t + (y0 - k*x0 - m) = 0
     
-    # Formeln: a*t2 + b*t + c = 0
-    
-    a = -0.5 * g
-    b = ball_hy_mps - k * ball_hx_mps
-    c = current_ball_y_m - k * current_ball_x_m - m
+    # Formeln: a*t2 + b*t + c = 0 
+    if isOnlyHorizontal != True:
+        a = -0.5 * g
+        b = ball_hy_mps - k * ball_hx_mps
+        c = current_ball_y_m - k * current_ball_x_m - m
+        
 
-    # 5️⃣ Diskriminanten D = b² - 4ac
-    disc = b**2 - 4*a*c
-    if disc < 0:
-        return []  # ingen skärning alls
+        # 5️⃣ Diskriminanten D = b² - 4ac
+        disc = b**2 - 4*a*c
+        if disc < 0:
+            return []  # ingen skärning alls
 
-    sqrt_disc = math.sqrt(disc)
-    
-    # lösning för andragradsekvationen:
-    t1 = (-b + sqrt_disc) / (2 * a)
-    t2 = (-b - sqrt_disc) / (2 * a)
+        sqrt_disc = math.sqrt(disc)
+        
+        # lösning för andragradsekvationen:
+        t1 = (-b + sqrt_disc) / (2 * a)
+        t2 = (-b - sqrt_disc) / (2 * a)
 
-    collision_times = []
-    for t in (t1, t2): 
-        # vi ville bara kolla om tiden är större än 0
-        if t > 0:  # bara framtida träffar
-            # Beräkna skärningspunktens koordinater
-            
-            # Samma som räkna x-positionen x(t) = hx * t
-            cx = current_ball_x_m + ball_hx_mps * t
-            
-            # Samma som räkna y-positionen y(t) = hy * t - 4.905 * t^2
-            cy = current_ball_y_m + ball_hy_mps * t - 0.5 * g * t**2
+        collision_times = []
+        for t in (t1, t2): 
+            # vi ville bara kolla om tiden är större än 0
+            if t > 0:  # bara framtida träffar
+                # Beräkna skärningspunktens koordinater
+                
+                # Samma som räkna x-positionen x(t) = hx * t
+                cx = current_ball_x_m + ball_hx_mps * t
+                
+                # Samma som räkna y-positionen y(t) = hy * t - 4.905 * t^2
+                cy = current_ball_y_m + ball_hy_mps * t - 0.5 * g * t**2
 
-            # Kontrollera att punkten ligger inom väggsegmentet
-            if (min(obstacle_x1, obstacle_x2) <= cx <= max(obstacle_x1, obstacle_x2) and
-                min(obstacle_y1, obstacle_y2) <= cy <= max(obstacle_y1, obstacle_y2)):
-                collision_times.append((t, cx, cy))
+                # Kontrollera att punkten ligger inom väggsegmentet
+                if (min(obstacle_x1, obstacle_x2) <= cx <= max(obstacle_x1, obstacle_x2) and
+                    min(obstacle_y1, obstacle_y2) <= cy <= max(obstacle_y1, obstacle_y2)):
+                    collision_times.append((t, cx, cy))
 
-    if collision_times:
-        return collision_times, ball_hx_mps, ball_hy_mps, k
-    else:
-        return [], None, None, None
+        if collision_times:
+            return collision_times, ball_hx_mps, ball_hy_mps, k
+        else:
+            return [], None, None, None
+        
+        
 
 def calc_pos_from_hole_px(ball_x, ball_y, scale):
     """Calculate distance between ball and hole in pixels."""
