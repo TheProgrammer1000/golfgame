@@ -11,7 +11,6 @@ circleRadius = 1  # radie i meter
 
 screen_width = 1280
 screen_height = 720
-scale_line = 3
 
 def main():
     shooting_grade = 40
@@ -41,16 +40,8 @@ def main():
     current_hastighet_X = inital_hastighet * math.cos(angle_rad)
     current_hastighet_Y = inital_hastighet * math.sin(angle_rad)
 
-    x1 = 100
-    x2 = 800
-    
-    ground_y_px = screen_height - 0 * scale  # 0 meter i PyGame-pixel
-
-    # Sätt linjen till ground_y_px (t.ex. 700) i pixlar
-    # (flyttad högre upp för att ytan ska vara längre upp på skärmen)
-    y1 = (ground_y_px)
-    y2 = (ground_y_px - 10)  # lite lutning
-    
+    x1, y1 = 100, 700
+    x2, y2 = 800, 710
     line_start = (x1, y1)
     line_end = (x2, y2)
 
@@ -70,33 +61,31 @@ def main():
 
         while time_left > 1e-8:
             # Kolla kollisionstid med linjen för nuvarande bana och hastighet
-            result = calcBallCollision(
+            collisions, hx, hy, k = calcBallCollision(
                 x1, y1, x2, y2,
                 current_ball_x, current_ball_y,
                 current_hastighet_X, current_hastighet_Y,
                 scale
             )
-            
-            if result and result[0]:  # om det finns träffar (förhindrar ValueError)
-                collisions, hx, hy, k = result
 
+            if collisions:
                 # Hitta närmsta framtida kollisionstid
                 t_hit, cx, cy = min(collisions, key=lambda c: c[0])
 
                 # Om kollision sker inom time_left
                 if 0 < t_hit <= time_left:
-                    # 1) Flytta fram till kollisionen exakt
-                    current_ball_x = cx  # sätt till kollisionspunkt
-                    current_ball_y = cy
-                    
-                    # Uppdatera hastighet vid kollisionspunkt
-                    current_hastighet_X, current_hastighet_Y = calcBallOut(current_hastighet_X, current_hastighet_Y, k)
+                    # Uppdatera position och hastighet fram till kollision
+                    current_ball_x += current_hastighet_X * t_hit
+                    current_hastighet_Y -= g * t_hit
+                    current_ball_y += current_hastighet_Y * t_hit
 
                     simulation_time += t_hit
                     time_left -= t_hit
 
-                    # Vi slutar röra bollen här i detta steg (ingen extra rörelse efter kollisionen)
-                    time_left = 0
+                    print(f"Kollision vid t={simulation_time:.4f}s, position ({current_ball_x:.3f}, {current_ball_y:.3f})")
+
+                    # Uppdatera hastighet efter kollision
+                    current_hastighet_X, current_hastighet_Y = calcBallOut(current_hastighet_X, current_hastighet_Y, k)
 
                 else:
                     # Ingen kollision inom detta tidssteg - uppdatera hela dt normalt
@@ -121,7 +110,7 @@ def main():
 
         # Rita grafiskt
         screen.fill(WHITE)
-        pygame.draw.line(screen, RED, line_start, line_end, scale_line)
+        pygame.draw.line(screen, RED, line_start, line_end, 3)
 
         ball_x_pixel = int(current_ball_x * scale)
         ball_y_pixel = int(mathConvertToGame(current_ball_y * scale))
@@ -143,27 +132,33 @@ def main():
 def calcBallOut(hx, hy, k):
     print(f"Hastigheter: hx={hx:.2f}, hy={hy:.2f}, lutning k={k:.3f}")
     
+    
     if hx == 0:
-        degreeBallin = math.atan2(hy, 0)
+        degreeBallin = math.atan2(hy)
     else:
         degreeBallin = math.atan2(hy, hx)
     
+    
     inBallin_deg = math.degrees(degreeBallin)
     print("degreeBallin (grader):", inBallin_deg)
+
 
     inObstable = math.atan(k)
     inObstable_deg = math.degrees(inObstable)
     
     print("inObstable_deg (grader):", inObstable_deg)
 
+    
     outDegreeBall_deg = 2 * inObstable_deg - inBallin_deg
     hypotenusan = math.sqrt(hx**2 + hy**2)
+    
     
     outDegreeBall_rad = math.radians(outDegreeBall_deg)
     new_current_hastighet_X = hypotenusan * math.cos(outDegreeBall_rad)
     new_current_hastighet_Y = hypotenusan * math.sin(outDegreeBall_rad)
     
     return new_current_hastighet_X, new_current_hastighet_Y
+    
 
 def calcBallCollision(obstacle_x1_px, obstacle_y1_px,
                       obstacle_x2_px, obstacle_y2_px,
@@ -187,12 +182,11 @@ def calcBallCollision(obstacle_x1_px, obstacle_y1_px,
     # 1️⃣ Konvertera från PyGame-pixlar till matematiska meter-koordinater
     # PyGame har (0,0) i övre vänstra hörnet → vi måste vända Y-axeln
     obstacle_x1 = obstacle_x1_px / scale
-    obstacle_y1 = (screen_height - obstacle_y1_px) / scale + circleRadius
-    obstacle_y2 = (screen_height - obstacle_y2_px) / scale + circleRadius
+    obstacle_y1 = (screen_height - obstacle_y1_px) / scale
     obstacle_x2 = obstacle_x2_px / scale
+    obstacle_y2 = (screen_height - obstacle_y2_px) / scale
 
-
-    # Kolla om linjen är vertikal
+     # Kolla om linjen är vertikal
     if obstacle_x2 == obstacle_x1:
         # Specialhantering för vertikal linje
         # T.ex. sätt k = None eller en flagga
@@ -250,6 +244,7 @@ def calcBallCollision(obstacle_x1_px, obstacle_y1_px,
         return collision_times, ball_hx_mps, ball_hy_mps, k
     else:
         return [], None, None, None
+
 
 def calc_pos_from_hole_px(ball_x, ball_y, scale):
     """Calculate distance between ball and hole in pixels."""
