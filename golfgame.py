@@ -41,15 +41,28 @@ def main():
     current_hastighet_X = inital_hastighet * math.cos(angle_rad)
     current_hastighet_Y = inital_hastighet * math.sin(angle_rad)
 
-    x1 = 20
+
+    ground_px_from_bottom = 100  # Hur långt från botten i pixlar marken ligger
+
+    x1 = 200
     x2 = screen_width
+    
+    # Sätt linjen till ground_y_px (t.ex. 700) i pixlar
+    # (flyttad högre upp för att ytan ska vara längre upp på skärmen)
+    y1 = (screen_height - ground_px_from_bottom)
+    y2 = (screen_height)  # lite lutning
     
     ground_y_px = screen_height - 0 * scale  # 0 meter i PyGame-pixel
 
-    # Sätt linjen till ground_y_px (t.ex. 700) i pixlar
-    # (flyttad högre upp för att ytan ska vara längre upp på skärmen)
-    y1 = (ground_y_px - 20)
-    y2 = (ground_y_px - 120)  # lite lutning
+    # Exempel: startpunkt (bollens position på skärmen)
+    start_pos = (ball_x_pixel, ball_y_pixel)
+    # Vid musrörelse eller musklick och drag:
+    mouse_pos = pygame.mouse.get_pos()
+
+    # Räkna ut vektor från start till mus
+    vec_x = mouse_pos[0] - start_pos[0]
+    vec_y = mouse_pos[1] - start_pos[1]
+
     
     line_start = (x1, y1)
     line_end = (x2, y2)
@@ -77,21 +90,15 @@ def main():
                 scale
             )
             
-            print('result: ', result)
-            
-            print('result[0]: ', result[0])
-            print('result[2]: ', result[2])
             
             if result and result[0]:  # om det finns träffar (förhindrar ValueError)
                 collisions, hx, hy, k = result
-                
-                     
-                print('hx', hx)
-                print('hy', hy)
-                print('k', k)
-
+                    
                 # Hitta närmsta framtida kollisionstid
                 t_hit, cx, cy = min(collisions, key=lambda c: c[0])
+                
+                
+                
 
                 # Om kollision sker inom time_left
                 if 0 < t_hit <= time_left:
@@ -129,9 +136,59 @@ def main():
                 time_left = 0
 
         # Spara för plotten
-        x_positions.append(current_ball_x)
-        y_positions.append(current_ball_y)
+        
+        # Konvertera linjens startpunkt från pixlar till meter
+        line_x1_m = x1 / scale
+        # PyGame har y=0 högst upp, vi vill ha matematiskt koordinatsystem där y=0 längst ner,
+        # därför inverterar vi y-koordinaten: (screen_height - y1)
+        line_y1_m = (screen_height - y1) / scale
 
+        # Konvertera linjens slutpunkt från pixlar till meter, på samma sätt
+        line_x2_m = x2 / scale
+        line_y2_m = (screen_height - y2) / scale
+
+       
+
+        # Om linjen inte är vertikal (dvs. x1 och x2 är inte lika)
+        
+        
+        # Så enkelt sagt vi beräknar när bollen höjd Y når marken med den lutningen dessa Y och sedan om bollen är under
+        # denna mark ytan så sätter vi den till positionen ovanförmarkytan + circleRadius och hastigheten på y blir omvänt och x hastigheten påverkas bara av bounce_loses_energy
+        
+        if line_x2_m == line_x1_m:
+            # Vertikal vägg
+            vertical_x = line_x1_m
+            ball_edge_x = current_ball_x + circleRadius if current_hastighet_X > 0 else current_ball_x - circleRadius
+
+            # Kolla om bollen tränger in i väggen
+            if (current_hastighet_X > 0 and ball_edge_x > vertical_x) or (current_hastighet_X < 0 and ball_edge_x < vertical_x):
+                if min(line_y1_m, line_y2_m) <= current_ball_y <= max(line_y1_m, line_y2_m):
+                    # Sätt bollen precis vid väggen
+                    if current_hastighet_X > 0:
+                        current_ball_x = vertical_x - circleRadius
+                    else:
+                        current_ball_x = vertical_x + circleRadius
+
+                    # Studs: vänd x-hastigheten och minska med energiförlust
+                    current_hastighet_X = -current_hastighet_X * bounce_loses_energy
+                    current_hastighet_Y = current_hastighet_Y * bounce_loses_energy
+
+        else:
+            # Lutande eller horisontell yta
+            k_line = (line_y2_m - line_y1_m) / (line_x2_m - line_x1_m)
+            m_line = line_y1_m - k_line * line_x1_m
+
+            ground_y_at_ball_x = k_line * current_ball_x + m_line
+            ball_bottom_y = current_ball_y - circleRadius
+
+            if ball_bottom_y < ground_y_at_ball_x and current_hastighet_Y < 0:
+                # Sätt bollen på marken
+                current_ball_y = ground_y_at_ball_x + circleRadius
+
+                # Studs: vänd y-hastigheten och minska med energiförlust
+                current_hastighet_Y = -current_hastighet_Y * bounce_loses_energy
+                current_hastighet_X = current_hastighet_X * bounce_loses_energy
+                
         # Rita grafiskt
         screen.fill(WHITE)
         pygame.draw.line(screen, RED, line_start, line_end, scale_line)
@@ -154,7 +211,12 @@ def main():
     pygame.quit()
 
 def calcBallOut(hx, hy, k):
-    print(f"Hastigheter: hx={hx:.2f}, hy={hy:.2f}, lutning k={k:.3f}")
+    #print(f"Hastigheter: hx={hx:.2f}, hy={hy:.2f}, lutning k={k:.3f}")
+
+    if k is None:  # Vertikal linje
+        new_hx = -hx  # reflektera hastighet i x-led
+        new_hy = hy   # behåll hastighet i y-led
+        return new_hx, new_hy
 
     if hx == 0:
         degreeBallin = math.atan2(hy, 0)
@@ -201,40 +263,73 @@ def calcBallCollision(obstacle_x1_px, obstacle_y1_px,
 
     # 1️⃣ Konvertera från PyGame-pixlar till matematiska meter-koordinater
     # PyGame har (0,0) i övre vänstra hörnet → vi måste vända Y-axeln
-    obstacle_x1 = obstacle_x1_px / scale
+    obstacle_x1 = obstacle_x1_px / scale - circleRadius
     obstacle_y1 = (screen_height - obstacle_y1_px) / scale + circleRadius
     obstacle_y2 = (screen_height - obstacle_y2_px) / scale + circleRadius
-    obstacle_x2 = obstacle_x2_px / scale
-
-    isOnlyHorizontal = False
-
-    k = 0
-
+    obstacle_x2 = obstacle_x2_px / scale - circleRadius
 
     # Kolla om linjen är vertikal
     if obstacle_y1 == obstacle_y2 and obstacle_x1 != obstacle_x2:
-        # Specialhantering för vertikal linje
-        # T.ex. sätt k = None eller en flagga
-        isOnlyHorizontal = True
+        # Horisontell linje
         k = 0
+        m = obstacle_y1  # y = m
+
+        a = -0.5 * g
+        b = ball_hy_mps
+        c = current_ball_y_m - m
+
+        disc = b**2 - 4 * a * c
+        if disc < 0:
+            return [], None, None, None
+
+        sqrt_disc = math.sqrt(disc)
+        t1 = (-b + sqrt_disc) / (2 * a)
+        t2 = (-b - sqrt_disc) / (2 * a)
+
+        collision_times = []
+        for t in (t1, t2):
+            if t > 0:
+                cx = current_ball_x_m + ball_hx_mps * t
+                cy = current_ball_y_m + ball_hy_mps * t - 0.5 * g * t**2
+
+                # Kolla att collision sker inom linjesegmentet på x-axeln
+                if min(obstacle_x1, obstacle_x2) <= cx <= max(obstacle_x1, obstacle_x2):
+                    collision_times.append((t, cx, cy))
+
+        if collision_times:
+            return collision_times, ball_hx_mps, ball_hy_mps, k
+        else:
+            return [], None, None, None
+    elif obstacle_x1 == obstacle_x2:
+        # Vertikal linje
+        k = None  # eller annan markör för vertikal linje
+
+        # Beräkna tid då x(t) = obstacle_x1
+        if ball_hx_mps != 0:
+            t = (obstacle_x1 - current_ball_x_m) / ball_hx_mps
+            if t > 0:
+                y_at_t = current_ball_y_m + ball_hy_mps * t - 0.5 * g * t**2
+                if min(obstacle_y1, obstacle_y2) <= y_at_t <= max(obstacle_y1, obstacle_y2):
+                    return [(t, obstacle_x1, y_at_t)], ball_hx_mps, ball_hy_mps, k
+        return [], None, None, None
+
     else:
         k = (obstacle_y2 - obstacle_y1) / (obstacle_x2 - obstacle_x1)
 
-    # 2️⃣ Beräkna linjens ekvation: y = kx + m
-    m = obstacle_y1 - k * obstacle_x1                              # skärning med y-axeln
+        # 2️⃣ Beräkna linjens ekvation: y = kx + m
+        m = obstacle_y1 - k * obstacle_x1                              # skärning med y-axeln
 
 
-    # 3️⃣ Bollens bana i meter: 
-    # x(t) = x0 + vx * t
-    # y(t) = y0 + vy * t - 0.5 * g * t²
-    # För kollision måste bollens bana och linjens ekvation vara lika:
-    # y0 + vy*t - 0.5*g*t² = k*(x0 + vx*t) + m
+        # 3️⃣ Bollens bana i meter: 
+        # x(t) = x0 + vx * t
+        # y(t) = y0 + vy * t - 0.5 * g * t²
+        # För kollision måste bollens bana och linjens ekvation vara lika:
+        # y0 + vy*t - 0.5*g*t² = k*(x0 + vx*t) + m
 
-    # 4️⃣ Flytta över allt till ena sidan så vi får en andragradsekvation i t:
-    # (-0.5*g)*t² + (vy - k*vx)*t + (y0 - k*x0 - m) = 0
-    
-    # Formeln: a*t2 + b*t + c = 0 
-    if isOnlyHorizontal != True:
+        # 4️⃣ Flytta över allt till ena sidan så vi får en andragradsekvation i t:
+        # (-0.5*g)*t² + (vy - k*vx)*t + (y0 - k*x0 - m) = 0
+        
+        # Formeln: a*t2 + b*t + c = 0 
         a = -0.5 * g
         b = ball_hy_mps - k * ball_hx_mps
         c = current_ball_y_m - k * current_ball_x_m - m
