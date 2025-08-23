@@ -12,6 +12,16 @@ scale = 100  # pixlar per meter (ökad för att synas tydligare)
 player = None
 
 obstacle = None
+
+
+
+def screenToMath(x, y):
+    """Omvandla skärm-pixlar till matematiska koordinater (meter)."""
+    math_x = x / scale
+    math_y = (screen_height - y) / scale
+    return pygame.Vector2(math_x, math_y)
+
+
 # --- Hjälpfunktioner ---
 def mathToScreen(x, y):
     """
@@ -20,6 +30,8 @@ def mathToScreen(x, y):
     """
     screen_x = int(x * scale)
     screen_y = int(screen_height - y * scale)
+    
+
     return (screen_x, screen_y)
 
 
@@ -38,20 +50,28 @@ def main():
     RED = (255, 0, 0)
     
     
+    theta = 20
+    
     # Player & obstacle position i meter    
     player = Player(pygame.Vector2(1, 2), pygame.Vector2(1, 1), pygame.Vector2(1,0).normalize(), (0, 255, 0), 8)
     obstacle = GameObject(pygame.Vector2(4, 3), RED, 8)
 
 
-    print("player.pos", player.pos)
-    print("player.vel", player.vel)
-    print("player.direction", player.direction)
+    # print("player.pos", player.pos)
+    # print("player.vel", player.vel)
+    # print("player.direction", player.direction)
 
     bullet_array = []
     bullet_speed = 2
     bullet_pos = pygame.Vector2(player.pos)
+    isBulletActive = False
     
-    bullet_velocity = player.direction * bullet_speed
+    bullet_velocity = player.direction
+    
+    
+    
+    print("bullet_velocity: ", bullet_velocity)
+     
 
 
     pygame.init()
@@ -62,7 +82,7 @@ def main():
     running = True        
     
     while running:
-        dt = clock.tick(60) / 1.0  # tid per frame
+        dt = clock.tick(60) / 1000.0  # tid per frame i SEKUNDER
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -70,23 +90,27 @@ def main():
         
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_d:
-                    player.pos.x += player.vel.x
+                    player.pos.x += player.vel.x * dt
                 if event.key == pygame.K_a:
-                    player.pos.x -= player.vel.x
+                    player.pos.x -= player.vel.x * dt
                 if event.key == pygame.K_w:
-                    player.pos.y += player.vel.y
+                    player.pos.y += player.vel.y * dt
                 if event.key == pygame.K_s:
-                    player.pos.y -= player.vel.y
+                    player.pos.y -= player.vel.y * dt
                 if event.key == pygame.K_SPACE:
-                    bullet_pos += bullet_velocity
+                    bullet_pos = player.pos.__add__(bullet_velocity)
+                    isBulletActive = True
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_px = pygame.mouse.get_pos()   
+                mouse_math = screenToMath(*mouse_px)               
                 
                     
     
         distanceBetweenPlayer = distanceVec(obstacle.pos, player.pos).magnitude()
         
     
-        if distanceBetweenPlayer <= 3:
-            print("INOM RADIEN!")
+        if distanceBetweenPlayer <= 1:
+            # print("INOM RADIEN!")
             player.setColor(RED)
         else:
             player.setColor(GREEN)
@@ -97,10 +121,16 @@ def main():
         # Player
         player_screen = mathToScreen(player.pos.x, player.pos.y)
         pygame.draw.circle(screen, player.color, player_screen, player.radius)
+       
+    
         
         # Shot
-        bullet_screen = mathToScreen(bullet_pos.x, bullet_pos.y)
-        pygame.draw.circle(screen, GREEN, bullet_screen, 4)
+        if isBulletActive == True:
+            bullet_screen = mathToScreen(bullet_pos.x, bullet_pos.y)
+            pygame.draw.circle(screen, GREEN, bullet_screen, 15)
+
+            isBulletActive = False
+                 
 
         # Obstacle
         obs_screen = mathToScreen(obstacle.pos.x, obstacle.pos.y)

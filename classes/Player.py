@@ -11,4 +11,7 @@ class Player:
     def setColor(self, color):
         self.color = color
         
+    def setDirection(self, theta):
+        self.direction = theta 
+        
     
