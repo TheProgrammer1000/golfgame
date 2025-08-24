@@ -54,8 +54,8 @@ def main():
     mouse_math = None
     
     # Player & obstacle position i meter    
-    player = Player(pygame.Vector2(1, 2), pygame.Vector2(7, 7), pygame.Vector2(1,0).normalize(), (0, 255, 0), 8)
-    obstacle = GameObject(pygame.Vector2(4, 3), RED, 8)
+    player = Player(pygame.Vector2(1, 2), pygame.Vector2(7, 7), pygame.Vector2(1,0).normalize(), (0, 255, 0), 8, 100)
+    obstacle = GameObject(pygame.Vector2(4, 3), RED, 8, 100)
 
     bullet_pos = pygame.Vector2(player.pos)
     isBulletActive = False
