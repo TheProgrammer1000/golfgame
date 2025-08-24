@@ -2,6 +2,7 @@ import math
 import pygame
 from classes.Player import Player
 from classes.GameObject import GameObject
+from classes.Bullet import Bullet
 
 # --- Konstanter ---
 circleRadius = 1  # bollradie i meter
@@ -12,7 +13,7 @@ scale = 100  # pixlar per meter (ökad för att synas tydligare)
 player = None
 
 obstacle = None
-
+bullet = None
 
 
 def screenToMath(x, y):
@@ -50,18 +51,13 @@ def main():
     RED = (255, 0, 0)
     
     
-    theta = 20
     mouse_math = None
-    
-    # Player & obstacle position i meter    
-    player = Player(pygame.Vector2(1, 2), pygame.Vector2(7, 7), pygame.Vector2(1,0).normalize(), (0, 255, 0), 8, 100)
-    obstacle = GameObject(pygame.Vector2(4, 3), RED, 8, 100)
 
-    bullet_pos = pygame.Vector2(player.pos)
+    bullet = Bullet(pygame.Vector2(1, 2), GREEN, 0.08, pygame.Vector2(1,0).normalize()) # 8 pixlar
+    player = Player(pygame.Vector2(1, 2), pygame.Vector2(7, 7), pygame.Vector2(1,0).normalize(), (0, 255, 0), 0.2) # 20 pixlar
+    obstacle = GameObject(pygame.Vector2(4, 3), RED, 0.2) # 0.2 m = 20 px
+
     isBulletActive = False
-    
-    bullet_velocity = player.direction
-    
 
     pygame.init()
     screen = pygame.display.set_mode((screen_width, screen_height))
@@ -86,27 +82,20 @@ def main():
                     player.pos.y += player.vel.y * dt
                 if event.key == pygame.K_s:
                     player.pos.y -= player.vel.y * dt
-                if event.key == pygame.K_SPACE:
-                    # print("bullet_pos BEFORE: ", bullet_pos)
-                    
-                                              
-                    distance = distanceVec(obstacle.pos, bullet_pos).magnitude()
-                    
-                    print("distance: ", distance)
-                    print("obstacle.radius: ", obstacle.radius)
+                if event.key == pygame.K_SPACE:                                      
+                    distance = distanceVec(obstacle.pos, bullet.pos).magnitude()
 
+                    print("distance: ", distance)
+                    # print("obstacle.radius: ", obstacle.radius_m)
                     
-                    # if distance < obstacle.radius:
-                        # print("Collision")
-                    
-                    
-                    
+                    if distance < obstacle.radius_m + bullet.radius_m:
+                        print("Collision")
                                         
                     if mouse_math != None:
                         direction_vec = mouse_math.__sub__(player.pos).normalize()
-                        bullet_pos = direction_vec + player.pos  
+                        bullet.pos = direction_vec + player.pos  
                     else:
-                        bullet_pos = player.pos + bullet_velocity
+                        bullet.pos = player.pos + bullet.direction
                         
                     isBulletActive = True
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -114,13 +103,12 @@ def main():
                 mouse_math = screenToMath(*mouse_px)
                 
                 direction_vec = mouse_math.__sub__(player.pos)
-                bullet_pos = direction_vec + player.pos                                
+                bullet.setBulletPos(direction_vec + player.pos)                    
     
         distanceBetweenPlayer = distanceVec(obstacle.pos, player.pos).magnitude()
-        
+        # print("distanceBetweenPlayer: ", distanceBetweenPlayer)
     
         if distanceBetweenPlayer <= 1:
-            # print("INOM RADIEN!")
             player.setColor(RED)
         else:
             player.setColor(GREEN)
@@ -128,28 +116,19 @@ def main():
         # Rita
         screen.fill(WHITE)
 
-        # Player
-        player_screen = mathToScreen(player.pos.x, player.pos.y)
-        pygame.draw.circle(screen, player.color, player_screen, player.radius)
+        player.draw(screen)
        
-    
-        
+       
+       
         # Shot
         if isBulletActive == True:
-            bullet_screen = mathToScreen(bullet_pos.x, bullet_pos.y)
-            pygame.draw.circle(screen, GREEN, bullet_screen, 15)
+            bullet_screen = mathToScreen(bullet.pos.x, bullet.pos.y)
+            pygame.draw.circle(screen, GREEN, bullet_screen, max(1, int(bullet.radius_m * scale)))
 
             isBulletActive = False
                  
-
         # Obstacle
-        obs_screen = mathToScreen(obstacle.pos.x, obstacle.pos.y)
-        pygame.draw.circle(screen, RED, obs_screen, obstacle.radius)
-
-
-        
-        # Rita riktning som linje (valfritt)
-        # pygame.draw.line(screen, (0,0,255), player_screen, obs_screen, 2)
+        obstacle.draw(screen)
 
         pygame.display.flip()
 
