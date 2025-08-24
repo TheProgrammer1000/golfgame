@@ -51,28 +51,17 @@ def main():
     
     
     theta = 20
+    mouse_math = None
     
     # Player & obstacle position i meter    
-    player = Player(pygame.Vector2(1, 2), pygame.Vector2(1, 1), pygame.Vector2(1,0).normalize(), (0, 255, 0), 8)
+    player = Player(pygame.Vector2(1, 2), pygame.Vector2(7, 7), pygame.Vector2(1,0).normalize(), (0, 255, 0), 8)
     obstacle = GameObject(pygame.Vector2(4, 3), RED, 8)
 
-
-    # print("player.pos", player.pos)
-    # print("player.vel", player.vel)
-    # print("player.direction", player.direction)
-
-    bullet_array = []
-    bullet_speed = 2
     bullet_pos = pygame.Vector2(player.pos)
     isBulletActive = False
     
     bullet_velocity = player.direction
     
-    
-    
-    print("bullet_velocity: ", bullet_velocity)
-     
-
 
     pygame.init()
     screen = pygame.display.set_mode((screen_width, screen_height))
@@ -98,13 +87,34 @@ def main():
                 if event.key == pygame.K_s:
                     player.pos.y -= player.vel.y * dt
                 if event.key == pygame.K_SPACE:
-                    bullet_pos = player.pos.__add__(bullet_velocity)
+                    # print("bullet_pos BEFORE: ", bullet_pos)
+                    
+                                              
+                    distance = distanceVec(obstacle.pos, bullet_pos).magnitude()
+                    
+                    print("distance: ", distance)
+                    print("obstacle.radius: ", obstacle.radius)
+
+                    
+                    # if distance < obstacle.radius:
+                        # print("Collision")
+                    
+                    
+                    
+                                        
+                    if mouse_math != None:
+                        direction_vec = mouse_math.__sub__(player.pos).normalize()
+                        bullet_pos = direction_vec + player.pos  
+                    else:
+                        bullet_pos = player.pos + bullet_velocity
+                        
                     isBulletActive = True
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_px = pygame.mouse.get_pos()   
-                mouse_math = screenToMath(*mouse_px)               
+                mouse_math = screenToMath(*mouse_px)
                 
-                    
+                direction_vec = mouse_math.__sub__(player.pos)
+                bullet_pos = direction_vec + player.pos                                
     
         distanceBetweenPlayer = distanceVec(obstacle.pos, player.pos).magnitude()
         
