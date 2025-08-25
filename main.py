@@ -3,18 +3,22 @@ import pygame
 from classes.Player import Player
 from classes.GameObject import GameObject
 from classes.Bullet import Bullet
+from classes.Enemy import Enemy
 
 # --- Konstanter ---
 circleRadius = 1  # bollradie i meter
 screen_width = 1280
 screen_height = 720
 scale = 100  # pixlar per meter (ökad för att synas tydligare)
+score = 0
 
 player = None
 
 obstacle = None
 bullet = None
 
+obstableHealth = 100
+damageBullet = 20
 
 def screenToMath(x, y):
     """Omvandla skärm-pixlar till matematiska koordinater (meter)."""
@@ -45,23 +49,29 @@ def addVec(player, vec):
 
 # --- Huvudprogram ---
 def main():
-    
+    global score
     WHITE = (255, 255, 255)
     GREEN = (0, 255, 0)
     RED = (255, 0, 0)
-    
     
     mouse_math = None
 
     bullet = Bullet(pygame.Vector2(1, 2), GREEN, 0.08, pygame.Vector2(1,0).normalize()) # 8 pixlar
     player = Player(pygame.Vector2(1, 2), pygame.Vector2(7, 7), pygame.Vector2(1,0).normalize(), (0, 255, 0), 0.2, bullet) # 20 pixlar
-    obstacle = GameObject(pygame.Vector2(4, 3), RED, 0.2) # 0.2 m = 20 px
+    enemy = Enemy(pygame.Vector2(4, 3), RED, 0.2, 100) # 0.2 m = 20 px
 
     isBulletActive = False
 
     pygame.init()
     screen = pygame.display.set_mode((screen_width, screen_height))
     pygame.display.set_caption("Vector Demo")
+    font = pygame.font.Font('freesansbold.ttf', 32)
+    #create a text surface object,
+    # on which text is drawn on it.
+
+
+    
+    
     clock = pygame.time.Clock()
 
     running = True        
@@ -83,14 +93,23 @@ def main():
                 if event.key == pygame.K_s:
                     player.pos.y -= player.vel.y * dt
                 if event.key == pygame.K_SPACE:                                      
-                    distance = distanceVec(obstacle.pos, bullet.pos).magnitude()
+                    if enemy is not None:                                                
+                        distance = distanceVec(enemy.pos, bullet.pos).magnitude()
 
-                    print("distance: ", distance)
-                    # print("obstacle.radius: ", obstacle.radius_m)
-                    
-                    if distance < obstacle.radius_m + bullet.radius_m:
-                        print("Collision")
+                        print("distance: ", distance)
+                        # print("obstacle.radius: ", obstacle.radius_m)
+                        
+                        if distance < enemy.radius_m + bullet.radius_m:
+
+
+                            enemy.health -= player.bullet.damage
+                            
+                            if enemy.health <= 0:
+                                enemy = None
+                                score += 1
+
                                         
+                    
                     if mouse_math != None:
                         direction_vec = mouse_math.__sub__(player.pos).normalize()
                         bullet.pos = direction_vec + player.pos  
@@ -98,6 +117,9 @@ def main():
                         bullet.pos = player.pos + bullet.direction
                         
                     isBulletActive = True
+                        
+                    
+                    
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_px = pygame.mouse.get_pos()   
                 mouse_math = screenToMath(*mouse_px)
@@ -105,16 +127,22 @@ def main():
                 direction_vec = mouse_math.__sub__(player.pos)
                 bullet.setBulletPos(direction_vec + player.pos)                    
     
-        distanceBetweenPlayer = distanceVec(obstacle.pos, player.pos).magnitude()
-        # print("distanceBetweenPlayer: ", distanceBetweenPlayer)
-    
-        if distanceBetweenPlayer <= 1:
-            player.setColor(RED)
-        else:
-            player.setColor(GREEN)
+        
+        if enemy is not None:        
+            distanceBetweenPlayer = distanceVec(enemy.pos, player.pos).magnitude()
+            # print("distanceBetweenPlayer: ", distanceBetweenPlayer)
+        
+            if distanceBetweenPlayer <= 1:
+                player.setColor(RED)
+            else:
+                player.setColor(GREEN)
 
         # Rita
         screen.fill(WHITE)
+        
+        
+        scoretext = font.render("Score: "+str(score), 1, (0,255,0))
+        screen.blit(scoretext, (5, 10))
 
         player.draw(screen)
        
@@ -128,7 +156,8 @@ def main():
             isBulletActive = False
                  
         # Obstacle
-        obstacle.draw(screen)
+        if enemy is not None:       
+            enemy.draw(screen)
 
         pygame.display.flip()
 

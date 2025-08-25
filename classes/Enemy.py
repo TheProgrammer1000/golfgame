@@ -1,15 +1,14 @@
 from pygame.math import Vector2   # säkrare import
 import pygame
 
-class GameObject:
-    scale = 100
-    screen_width = 1280
-    screen_height = 720
+from classes.GameObject import GameObject
 
-    def __init__(self, pos, color, radius_m):
-        self.pos = Vector2(pos)
-        self.color = color
-        self.radius_m = radius_m
+class Enemy(GameObject):
+    scale = 100
+
+    def __init__(self, pos, color, radius_m, health):
+        super().__init__(pos, color, radius_m)
+        self.health = health
         
         
     def setColor(self, color):
