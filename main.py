@@ -57,7 +57,7 @@ def main():
     mouse_math = None
 
     bullet = Bullet(pygame.Vector2(1, 2), GREEN, 0.08, pygame.Vector2(1,0).normalize()) # 8 pixlar
-    player = Player(pygame.Vector2(1, 2), pygame.Vector2(7, 7), pygame.Vector2(1,0).normalize(), (0, 255, 0), 0.2, bullet) # 20 pixlar
+    player = Player(pygame.Vector2(1, 2), 5, pygame.Vector2(1,0).normalize(), (0, 255, 0), 0.2, bullet) # 20 pixlar
     enemy = Enemy(pygame.Vector2(4, 3), RED, 0.2, 100) # 0.2 m = 20 px
 
     isBulletActive = False
@@ -84,14 +84,7 @@ def main():
                 running = False
         
             if event.type == pygame.KEYUP:
-                if event.key == pygame.K_d:
-                    player.pos.x += player.vel.x * dt
-                if event.key == pygame.K_a:
-                    player.pos.x -= player.vel.x * dt
-                if event.key == pygame.K_w:
-                    player.pos.y += player.vel.y * dt
-                if event.key == pygame.K_s:
-                    player.pos.y -= player.vel.y * dt
+                
                 if event.key == pygame.K_SPACE:                                      
                     if enemy is not None:                                                
                         distance = distanceVec(enemy.pos, bullet.pos).magnitude()
@@ -127,6 +120,10 @@ def main():
                 direction_vec = mouse_math.__sub__(player.pos)
                 bullet.setBulletPos(direction_vec + player.pos)                    
     
+        
+        # 🔑 flytta hit så att rörelser sker varje frame
+        keys = pygame.key.get_pressed()
+        player.update(keys, dt)
         
         if enemy is not None:        
             distanceBetweenPlayer = distanceVec(enemy.pos, player.pos).magnitude()
