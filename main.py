@@ -54,7 +54,7 @@ def main():
     mouse_math = None
 
     bullet = Bullet(pygame.Vector2(1, 2), GREEN, 0.08, pygame.Vector2(1,0).normalize()) # 8 pixlar
-    player = Player(pygame.Vector2(1, 2), pygame.Vector2(7, 7), pygame.Vector2(1,0).normalize(), (0, 255, 0), 0.2) # 20 pixlar
+    player = Player(pygame.Vector2(1, 2), pygame.Vector2(7, 7), pygame.Vector2(1,0).normalize(), (0, 255, 0), 0.2, bullet) # 20 pixlar
     obstacle = GameObject(pygame.Vector2(4, 3), RED, 0.2) # 0.2 m = 20 px
 
     isBulletActive = False
