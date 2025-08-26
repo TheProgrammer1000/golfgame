@@ -58,7 +58,14 @@ def main():
 
     bullet = Bullet(pygame.Vector2(1, 2), GREEN, 0.08, pygame.Vector2(1,0).normalize()) # 8 pixlar
     player = Player(pygame.Vector2(1, 2), 5, pygame.Vector2(1,0).normalize(), (0, 255, 0), 0.2, bullet) # 20 pixlar
-    enemy = Enemy(pygame.Vector2(4, 3), RED, 0.2, 100) # 0.2 m = 20 px
+    enemy1 = Enemy(pygame.Vector2(4, 3), RED, 0.2, 100) # 0.2 m = 20 px
+    enemy2 = Enemy(pygame.Vector2(6, 2), RED, 0.2, 100) # 0.2 m = 20 px
+    
+    
+    enemies = [] 
+    
+    enemies.append(enemy1)
+    enemies.append(enemy2)
 
     isBulletActive = False
 
@@ -85,8 +92,10 @@ def main():
         
             if event.type == pygame.KEYUP:
                 
-                if event.key == pygame.K_SPACE:                                      
-                    if enemy is not None:                                                
+                if event.key == pygame.K_SPACE: 
+                    
+                    for enemy in enemies.copy():
+                                
                         distance = distanceVec(enemy.pos, bullet.pos).magnitude()
 
                         print("distance: ", distance)
@@ -98,7 +107,7 @@ def main():
                             enemy.health -= player.bullet.damage
                             
                             if enemy.health <= 0:
-                                enemy = None
+                                enemies.remove(enemy)
                                 score += 1
 
                                         
@@ -125,12 +134,13 @@ def main():
         keys = pygame.key.get_pressed()
         player.update(keys, dt)
         
-        if enemy is not None:        
+        for enemy in enemies:        
             distanceBetweenPlayer = distanceVec(enemy.pos, player.pos).magnitude()
             # print("distanceBetweenPlayer: ", distanceBetweenPlayer)
         
             if distanceBetweenPlayer <= 1:
                 player.setColor(RED)
+                break
             else:
                 player.setColor(GREEN)
 
@@ -153,7 +163,7 @@ def main():
             isBulletActive = False
                  
         # Obstacle
-        if enemy is not None:       
+        for enemy in enemies:   
             enemy.draw(screen)
 
         pygame.display.flip()
