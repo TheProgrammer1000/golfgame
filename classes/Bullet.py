@@ -16,6 +16,25 @@ class Bullet(GameObject):
     def setBulletDirection(self, direction):
         self.direction = direction
         
-    def update(self, obstacle, dt):
-        pass    
+    def update(self, dt):        
+        print(self.pos)
+        if self.isBulletShot:
+            self.pos += self.direction * self.bulletSpeed * dt
+            
+            
+            
+            # bullet_screen = mathToScreen(bullet.pos.x, bullet.pos.y)
+            # pygame.draw.circle(screen, GREEN, bullet_screen, max(1, int(bullet.radius_m * scale)))
+        
+            # bullet_start = player.pos.copy()
+        
+            
+            # traveled = (bullet.pos - bullet_start).length()
+            
+            # if traveled >= bullet.bulletRange:
+            #     isBulletActive = False
+            # else:            
+            #     bullet_screen = mathToScreen(bullet.pos.x, bullet.pos.y)
+            #     pygame.draw.circle(screen, GREEN, bullet_screen, max(1, int(bullet.radius_m * scale)))
     
+     

@@ -17,9 +17,19 @@ class Player(GameObject):
     def setDirection(self, theta):
         self.direction = theta 
     
+    def shoot(self):
+        self.bullet.isBulletShot = True
+        print("Skjuter")
     
-    # def shootBullet():
+    def shootRange(self):
+        bullet_start = self.pos.copy()
+        traveled = (self.bullet.pos - bullet_start).length()
         
+        if traveled >= self.bullet.bulletRange:
+            print("HÄÄÄÄR")
+            self.bullet.isBulletShot = False
+
+     
     def update(self, keys, dt):
         if keys[pygame.K_w]:
             self.pos.y += self.movement_speed * dt
@@ -29,6 +39,11 @@ class Player(GameObject):
             self.pos.x += self.movement_speed * dt
         if keys[pygame.K_a]:
             self.pos.x -= self.movement_speed * dt
+            
+        if self.bullet.isBulletShot == True:
+            self.shootRange()
+        
+        
             
             
                 

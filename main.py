@@ -56,7 +56,7 @@ def main():
     
     mouse_math = None
 
-    bullet = Bullet(pygame.Vector2(1, 2), GREEN, 0.08, pygame.Vector2(1,0).normalize(), 2, 2) # 8 pixlar
+    bullet = Bullet(pygame.Vector2(1, 2), GREEN, 0.08, pygame.Vector2(1,0).normalize(), 2, 3) # 8 pixlar
     player = Player(pygame.Vector2(1, 2), 5, pygame.Vector2(1,0).normalize(), (0, 255, 0), 0.2, bullet) # 20 pixlar
     enemy1 = Enemy(pygame.Vector2(4, 3), RED, 0.2, 100) # 0.2 m = 20 px
     enemy2 = Enemy(pygame.Vector2(6, 2), RED, 0.2, 100) # 0.2 m = 20 px
@@ -89,6 +89,8 @@ def main():
     while running:
         dt = clock.tick(60) / 1000.0  # tid per frame i SEKUNDER
 
+        bullet.update(dt)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -96,34 +98,36 @@ def main():
             if event.type == pygame.KEYUP:
                 
                 if event.key == pygame.K_SPACE: 
+                    player.shoot()
+     
                     
-                    for enemy in enemies.copy():
-                                
-                        distance = distanceVec(enemy.pos, bullet.pos).magnitude()
+                    
+                    # for enemy in enemies.copy():                        
+                    #     distance = distanceVec(enemy.pos, bullet.pos).magnitude()
 
-                        #print("distance: ", distance)
-                        # print("obstacle.radius: ", obstacle.radius_m)
+                    #     print("distance: ", distance)
+                    #     # print("obstacle.radius: ", obstacle.radius_m)
                         
-                        if distance < enemy.radius_m + bullet.radius_m:
-
-
-                            enemy.health -= player.bullet.damage
+                    #     if distance < enemy.radius_m + bullet.radius_m:
                             
-                            if enemy.health <= 0:
-                                enemies.remove(enemy)
-                                score += 1
+
+                    #         enemy.health -= player.bullet.damage
+                            
+                    #         if enemy.health <= 0:
+                    #             enemies.remove(enemy)
+                    #             score += 1
 
                                         
                     
-                    if mouse_math != None:
-                        direction_vec = mouse_math.__sub__(player.pos).normalize()
-                        bullet.pos = direction_vec + player.pos  
-                    else:
-                        bullet.pos = player.pos + bullet.direction
+                    # if mouse_math != None:
+                    #     direction_vec = mouse_math.__sub__(player.pos).normalize()
+                    #     bullet.pos = direction_vec + player.pos  
+                    # else:
+                    #     bullet.pos = player.pos + bullet.direction
                         
-                    #bullet.pos = player.pos.copy()
-                    bullet_start = bullet.pos.copy()   # 🔑 startpunkten sätts här
-                    isBulletActive = True
+                    # #bullet.pos = player.pos.copy()
+                    # bullet_start = bullet.pos.copy()   # 🔑 startpunkten sätts här
+                    # isBulletActive = True
                         
                     
                     
@@ -158,23 +162,9 @@ def main():
         screen.blit(scoretext, (5, 10))
 
         player.draw(screen)
+        player.bullet.draw(screen)
        
-        # Shot
-        if isBulletActive == True:
-            bullet.pos += bullet.direction * bullet.bulletSpeed * dt 
-            
-        
-            bullet_start = player.pos.copy()
-        
-            
-            traveled = (bullet.pos - bullet_start).length()
-            
-            if traveled >= bullet.bulletRange:
-                isBulletActive = False
-            else:            
-                bullet_screen = mathToScreen(bullet.pos.x, bullet.pos.y)
-                pygame.draw.circle(screen, GREEN, bullet_screen, max(1, int(bullet.radius_m * scale)))
-                 
+
         # Obstacle
         for enemy in enemies:   
             enemy.draw(screen)
