@@ -56,10 +56,13 @@ def main():
     
     mouse_math = None
 
-    bullet = Bullet(pygame.Vector2(1, 2), GREEN, 0.08, pygame.Vector2(1,0).normalize()) # 8 pixlar
+    bullet = Bullet(pygame.Vector2(1, 2), GREEN, 0.08, pygame.Vector2(1,0).normalize(), 2, 2) # 8 pixlar
     player = Player(pygame.Vector2(1, 2), 5, pygame.Vector2(1,0).normalize(), (0, 255, 0), 0.2, bullet) # 20 pixlar
     enemy1 = Enemy(pygame.Vector2(4, 3), RED, 0.2, 100) # 0.2 m = 20 px
     enemy2 = Enemy(pygame.Vector2(6, 2), RED, 0.2, 100) # 0.2 m = 20 px
+    
+         
+    bullet_start = pygame.Vector2(0, 0) 
     
     
     enemies = [] 
@@ -98,7 +101,7 @@ def main():
                                 
                         distance = distanceVec(enemy.pos, bullet.pos).magnitude()
 
-                        print("distance: ", distance)
+                        #print("distance: ", distance)
                         # print("obstacle.radius: ", obstacle.radius_m)
                         
                         if distance < enemy.radius_m + bullet.radius_m:
@@ -118,6 +121,8 @@ def main():
                     else:
                         bullet.pos = player.pos + bullet.direction
                         
+                    #bullet.pos = player.pos.copy()
+                    bullet_start = bullet.pos.copy()   # 🔑 startpunkten sätts här
                     isBulletActive = True
                         
                     
@@ -126,8 +131,10 @@ def main():
                 mouse_px = pygame.mouse.get_pos()   
                 mouse_math = screenToMath(*mouse_px)
                 
-                direction_vec = mouse_math.__sub__(player.pos)
-                bullet.setBulletPos(direction_vec + player.pos)                    
+                direction_vec = mouse_math.__sub__(player.pos).normalize()
+                bullet.setBulletPos(direction_vec + player.pos)
+                
+                bullet.setBulletDirection(direction_vec)       
     
         
         # 🔑 flytta hit så att rörelser sker varje frame
@@ -147,20 +154,26 @@ def main():
         # Rita
         screen.fill(WHITE)
         
-        
         scoretext = font.render("Score: "+str(score), 1, (0,255,0))
         screen.blit(scoretext, (5, 10))
 
         player.draw(screen)
        
-       
-       
         # Shot
         if isBulletActive == True:
-            bullet_screen = mathToScreen(bullet.pos.x, bullet.pos.y)
-            pygame.draw.circle(screen, GREEN, bullet_screen, max(1, int(bullet.radius_m * scale)))
-
-            isBulletActive = False
+            bullet.pos += bullet.direction * bullet.bulletSpeed * dt 
+            
+        
+            bullet_start = player.pos.copy()
+        
+            
+            traveled = (bullet.pos - bullet_start).length()
+            
+            if traveled >= bullet.bulletRange:
+                isBulletActive = False
+            else:            
+                bullet_screen = mathToScreen(bullet.pos.x, bullet.pos.y)
+                pygame.draw.circle(screen, GREEN, bullet_screen, max(1, int(bullet.radius_m * scale)))
                  
         # Obstacle
         for enemy in enemies:   
