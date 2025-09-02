@@ -100,45 +100,17 @@ def main():
                 if event.key == pygame.K_SPACE: 
                     player.shoot()
      
-                    
-                    
-                    # for enemy in enemies.copy():                        
-                    #     distance = distanceVec(enemy.pos, bullet.pos).magnitude()
-
-                    #     print("distance: ", distance)
-                    #     # print("obstacle.radius: ", obstacle.radius_m)
-                        
-                    #     if distance < enemy.radius_m + bullet.radius_m:
-                            
-
-                    #         enemy.health -= player.bullet.damage
-                            
-                    #         if enemy.health <= 0:
-                    #             enemies.remove(enemy)
-                    #             score += 1
-
-                                        
-                    
-                    # if mouse_math != None:
-                    #     direction_vec = mouse_math.__sub__(player.pos).normalize()
-                    #     bullet.pos = direction_vec + player.pos  
-                    # else:
-                    #     bullet.pos = player.pos + bullet.direction
-                        
-                    # #bullet.pos = player.pos.copy()
-                    # bullet_start = bullet.pos.copy()   # 🔑 startpunkten sätts här
-                    # isBulletActive = True
                         
                     
                     
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_px = pygame.mouse.get_pos()   
-                mouse_math = screenToMath(*mouse_px)
+            # if event.type == pygame.MOUSEBUTTONDOWN:
+                # mouse_px = pygame.mouse.get_pos()   
+                # mouse_math = screenToMath(*mouse_px)
                 
-                direction_vec = mouse_math.__sub__(player.pos).normalize()
-                bullet.setBulletPos(direction_vec + player.pos)
+                # direction_vec = mouse_math.__sub__(player.pos).normalize()
+                # bullet.setBulletPos(direction_vec + player.pos)
                 
-                bullet.setBulletDirection(direction_vec)       
+                # bullet.setBulletDirection(direction_vec)       
     
         
         # 🔑 flytta hit så att rörelser sker varje frame

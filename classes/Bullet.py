@@ -1,4 +1,5 @@
 from pygame.math import Vector2   # säkrare import
+import pygame
 from classes.GameObject import GameObject
 
 class Bullet(GameObject):
@@ -8,6 +9,7 @@ class Bullet(GameObject):
         self.bulletSpeed = bulletSpeed
         self.bulletRange = bulletRange
         self.isBulletShot = False
+        self.spawn_pos = Vector2(pos)
         self.damage = 20
         
     def setBulletPos(self, pos):
@@ -15,26 +17,18 @@ class Bullet(GameObject):
     
     def setBulletDirection(self, direction):
         self.direction = direction
+         
+    def draw(self, screen):
+        if self.isBulletShot == True:            
+            screen_height = screen.get_height()
+            screen_x = int(self.pos.x * self.scale) 
+            screen_y = int(screen_height - self.pos.y * self.scale)
+            pygame.draw.circle(screen, self.color, (screen_x, screen_y), int(self.radius_m * self.scale))
+
         
+
     def update(self, dt):        
-        print(self.pos)
         if self.isBulletShot:
             self.pos += self.direction * self.bulletSpeed * dt
-            
-            
-            
-            # bullet_screen = mathToScreen(bullet.pos.x, bullet.pos.y)
-            # pygame.draw.circle(screen, GREEN, bullet_screen, max(1, int(bullet.radius_m * scale)))
-        
-            # bullet_start = player.pos.copy()
-        
-            
-            # traveled = (bullet.pos - bullet_start).length()
-            
-            # if traveled >= bullet.bulletRange:
-            #     isBulletActive = False
-            # else:            
-            #     bullet_screen = mathToScreen(bullet.pos.x, bullet.pos.y)
-            #     pygame.draw.circle(screen, GREEN, bullet_screen, max(1, int(bullet.radius_m * scale)))
     
      

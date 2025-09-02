@@ -14,16 +14,21 @@ class Player(GameObject):
         self.bullet = bullet
         self.movement_speed = movement_speed
     
-    def setDirection(self, theta):
-        self.direction = theta 
-    
     def shoot(self):
+        self.bullet.pos = self.pos.copy()            # skott börjar vid spelarens nuvarande position
+        self.bullet.spawn_pos = self.pos.copy()      # spara spawn-position för range-beräkning
+        # sätt korrekt riktning (normera om nollvektor undviks)
+        if self.direction.length_squared() != 0:
+            self.bullet.direction = self.direction.normalize()
+        else:
+            self.bullet.direction = Vector2(1, 0)    # fallback-riktning
         self.bullet.isBulletShot = True
-        print("Skjuter")
-    
+        print("Skjuter från", self.bullet.spawn_pos)
+        
     def shootRange(self):
-        bullet_start = self.pos.copy()
-        traveled = (self.bullet.pos - bullet_start).length()
+        traveled = (self.bullet.pos - self.bullet.spawn_pos).length()
+        
+        print("self.bullet.pos: ", self.bullet.pos)
         
         if traveled >= self.bullet.bulletRange:
             print("HÄÄÄÄR")
